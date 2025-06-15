@@ -6,7 +6,7 @@
 /*   By: wirare <wirare@42angouleme.fr>             +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/06/15 17:31:33 by wirare            #+#    #+#             */
-/*   Updated: 2025/06/15 22:41:57 by wirare           ###   ########.fr       */
+/*   Updated: 2025/06/15 22:53:00 by wirare           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 #pragma once
@@ -92,7 +92,7 @@ class Vector
 				AVX::store(r3, a + i*w);
 			}
 			for (size_t i = w * chunks; i < n; i++)
-				a[i] += b[i];
+				a[i] -= b[i];
 		}
 
 		void scl(T x)

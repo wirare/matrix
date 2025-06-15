@@ -1,3 +1,4 @@
+#include <cstdlib>
 #include <iostream>
 #include <vector>
 #include <cmath>
@@ -13,9 +14,8 @@ bool are_equal(const Vector<T>& a, const Vector<T>& b, T epsilon = static_cast<T
 }
 
 template <typename T>
-void run_tests(const std::string& type_name) {
+void run_tests(const std::string& type_name, size_t size) {
     std::cout << "== Testing " << type_name << " ==\n";
-    size_t size = 256; // larger size for AVX batch processing
 
     std::vector<T> raw(size);
     for (size_t i = 0; i < size; ++i) {
@@ -56,9 +56,10 @@ void run_tests(const std::string& type_name) {
     std::cout << '\n';
 }
 
-int main() {
-    run_tests<float>("float");
-    run_tests<double>("double");
+int main(int ac, char **av) {
+	(void)ac;
+    run_tests<float>("float", atoi(av[1]));
+    run_tests<double>("double", atoi(av[1]));
     return 0;
 }
 

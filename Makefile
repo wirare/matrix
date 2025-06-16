@@ -1,6 +1,6 @@
 # Compiler and flags
-CXX := g++
-CXXFLAGS := -Wall -Wextra -Werror -std=c++17 -Iincludes -mavx2
+CXX := clang++
+CXXFLAGS := -Wall -Wextra -Werror -std=c++17 -Iincludes -mavx2 -mfma
 
 # Directories
 SRCDIR := .

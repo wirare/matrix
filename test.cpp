@@ -171,6 +171,46 @@ void test_lerp_vector()
         assert(std::abs(result[i] - expected[i]) < (std::is_same<K, float>::value ? 1e-6f : 1e-12));
 }
 
+template <typename T>
+void test_dot_product() {
+    Vector<T> a = {1, 2, 3, 4};
+    Vector<T> b = {5, 6, 7, 8};
+
+    T expected = static_cast<T>(70);
+
+    T result = a.dot(b);
+
+    T epsilon = std::is_same<T, float>::value ? 1e-5f : 1e-12;
+
+    assert(std::abs(result - expected) < epsilon);
+    std::cout << "Dot product test passed for " << (std::is_same<T, float>::value ? "float" : "double") << "\n";
+}
+
+template <typename T>
+void test_norms() {
+    Vector<T> v = {-3, 4, -2};
+
+    // Expected values
+    T expected_norm_1   = static_cast<T>(9);              // |−3| + |4| + |−2| = 9
+    T expected_norm_2   = static_cast<T>(std::sqrt(29));  // sqrt(9 + 16 + 4)
+    T expected_norm_inf = static_cast<T>(4);              // max(|−3|, |4|, |−2|)
+
+    // Calculate
+    T norm_1   = v.norm_1();
+    T norm_2   = v.norm();
+    T norm_inf = v.norm_inf();
+
+    // Tolerance
+    T eps = std::is_same<T, float>::value ? 1e-5f : 1e-12;
+
+    // Assertions
+    assert(std::abs(norm_1   - expected_norm_1)   < eps);
+    assert(std::abs(norm_2   - expected_norm_2)   < eps);
+    assert(std::abs(norm_inf - expected_norm_inf) < eps);
+
+    std::cout << "Norm tests passed for " << (std::is_same<T, float>::value ? "float" : "double") << "\n";
+}
+
 int main(int ac, char **av) {
 	(void)ac;
     run_tests<float>("float", atoi(av[1]));
@@ -181,6 +221,10 @@ int main(int ac, char **av) {
 	test_lerp_vector<float>();
 	test_lerp_vector<double>();
 	std::cout << "All lerps test passed !" << std::endl;
+	test_dot_product<float>();
+	test_dot_product<double>();
+	test_norms<float>();
+	test_norms<double>();
     return 0;
 }
 

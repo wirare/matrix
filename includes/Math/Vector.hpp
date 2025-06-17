@@ -6,7 +6,7 @@
 /*   By: wirare <wirare@42angouleme.fr>             +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/06/15 17:31:33 by wirare            #+#    #+#             */
-/*   Updated: 2025/06/16 15:27:22 by ellanglo         ###   ########.fr       */
+/*   Updated: 2025/06/17 16:13:52 by wirare           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 #pragma once
@@ -18,6 +18,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <vector>
+#include <math.h>
 
 template <typename T>
 class Vector;
@@ -208,7 +209,6 @@ class Vector
 			T* a = data.data();
 			const T* b = vec.data.data();
 
-			T res;
 			reg acc = AVX::zero();
 			for (size_t i = 0; i < chunks; i++)
 			{
@@ -216,7 +216,91 @@ class Vector
 				reg r2 = AVX::load(b + i*w);
 				acc = AVX::fmadd(r1, r2, acc);
 			}
-			
+
+			T res = AVX::hsum(acc);
+
+			for (size_t i = w * chunks; i < n; i++)
+				res += a[i] * b[i];
+
+			return res;
+		}
+
+		T norm_1()
+		{
+			const size_t n = size();
+			const size_t w = AVX::width;
+			const size_t chunks = n / w;
+
+			T* a = data.data();
+
+			reg acc = AVX::zero();
+			reg sign = AVX::set1(-0.0f);
+			for (size_t i = 0; i < chunks; i++)
+			{
+				reg r1 = AVX::load(a + i*w);
+				reg r2 = AVX::and_(r1, sign);
+				acc = AVX::add(r2, acc);
+			}
+
+			T res = AVX::hsum(acc);
+
+			for (size_t i = w * chunks; i < n; i++)
+				res += abs(a[i]);
+
+			return res;
+		}
+
+		T norm()
+		{
+			const size_t n = size();
+			const size_t w = AVX::width;
+			const size_t chunks = n / w;
+
+			T* a = data.data();
+
+			reg acc = AVX::zero();
+			for (size_t i = 0; i < chunks; i++)
+			{
+				reg r1 = AVX::load(a + i*w);
+				reg r2 = AVX::mul(r1, r1);
+				acc = AVX::add(r2, acc);
+			}
+
+			T res = AVX::hsum(acc);
+
+			T tmp;
+			for (size_t i = w * chunks; i < n; i++)
+			{
+				tmp = a[i];
+				res += tmp * tmp;
+			}
+
+			return std::pow(res, 0.5f);
+		}
+
+		T norm_inf()
+		{
+			const size_t n = size();
+			const size_t w = AVX::width;
+			const size_t chunks = n / w;
+
+			T* a = data.data();
+
+			reg r_max = AVX::zero();
+			reg sign = AVX::set1(-0.0f);
+			for (size_t i = 0; i < chunks; i++)
+			{
+				reg r1 = AVX::load(a + i*w);
+				reg r2 = AVX::and_(r1, sign);
+				r_max = AVX::max(r2, r_max);
+			}
+
+			T res = AVX::ext_max(r_max);
+
+			for (size_t i = w * chunks; i < n; i++)
+				res = std::max(res, a[i]);
+
+			return res;
 		}
 
 		Vector &operator+(const Vector& vec) {return add(vec); }

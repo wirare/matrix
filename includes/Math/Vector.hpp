@@ -6,7 +6,7 @@
 /*   By: wirare <wirare@42angouleme.fr>             +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/06/15 17:31:33 by wirare            #+#    #+#             */
-/*   Updated: 2025/06/18 02:01:34 by wirare           ###   ########.fr       */
+/*   Updated: 2025/06/18 19:47:04 by ellanglo         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 #pragma once
@@ -119,9 +119,9 @@ static Vector<K> cross_product(const Vector<K> &a, const Vector<K> &b)
 	if (a.size() != 3 || b.size() != 3)
 		throw std::invalid_argument("Cross product require 2 3-dimentional vector");
 
-	#define X 1
-	#define Y 2
-	#define Z 3
+	#define X 0
+	#define Y 1
+	#define Z 2
 	Vector<K> res = 
 	{
 		a[Y] * b[Z] - a[Z] * b[Y],
@@ -141,216 +141,216 @@ class Matrix;
 template <typename K>
 class Vector
 {
-	public:
-		Vector(const std::vector<K> &vec): data(vec.begin(), vec.end()) {}
-		Vector(size_t size): data(size) {}
-		Vector(size_t size, const K &value): data(size, value) {}
-		Vector(const std::initializer_list<K> &init): data(init) {}
+public:
+	Vector(const std::vector<K> &vec): data(vec.begin(), vec.end()) {}
+	Vector(size_t size): data(size) {}
+	Vector(size_t size, const K &value): data(size, value) {}
+	Vector(const std::initializer_list<K> &init): data(init) {}
 
-		size_t size() const noexcept { return data.size(); }
-		const aligned_vector<K> &getData() const noexcept { return data; }
+	size_t size() const noexcept { return data.size(); }
+	const aligned_vector<K> &getData() const noexcept { return data; }
 
-		friend std::ostream& operator<<(std::ostream& os, Vector const& v) {
-			os << "Vector(size=" << v.size() << ") [";
-			if (!v.data.empty()) {
-				os << v.data.front();
-				for (std::size_t i = 1; i < v.data.size(); ++i) {
-					os << ", " << v.data[i];
-				}
+	friend std::ostream& operator<<(std::ostream& os, Vector const& v) {
+		os << "Vector(size=" << v.size() << ") [";
+		if (!v.data.empty()) {
+			os << v.data.front();
+			for (std::size_t i = 1; i < v.data.size(); ++i) {
+				os << ", " << v.data[i];
 			}
-			os << "]";
-			return os;
+		}
+		os << "]";
+		return os;
+	}
+
+	K &operator[](size_t i) { return data[i]; }
+	const K &operator[](size_t i) const { return data[i]; }
+
+	void print(std::ostream& os = std::cout) const { os << *this << '\n'; }
+
+	void resize(size_t new_size) { data.resize(new_size); }
+
+	void add(const Vector &vec)
+	{
+		const size_t n = size();
+
+		if (n != vec.size()) throw std::invalid_argument("Vector addition requires equal sizes");
+
+		const size_t w = AVX::width;
+		const size_t chunks = n / w;
+
+		K* a = data.data();
+		const K* b = vec.data.data();
+
+		for (size_t i = 0; i < chunks; i++)
+		{
+			reg r1 = AVX::load(a + i*w);
+			reg r2 = AVX::load(b + i*w);
+			reg r3 = AVX::add(r1, r2);
+			AVX::store(r3, a + i*w);
+		}
+		for (size_t i = w * chunks; i < n; i++)
+			a[i] += b[i];
+	}	
+
+	void sub(const Vector &vec)
+	{
+		const size_t n = size();
+
+		if (n != vec.size()) throw std::invalid_argument("Vector substraction requires equal sizes");
+
+		const size_t w = AVX::width;
+		const size_t chunks = n / w;
+
+		K* a = data.data();
+		const K* b = vec.data.data();
+
+		for (size_t i = 0; i < chunks; i++)
+		{
+			reg r1 = AVX::load(a + i*w);
+			reg r2 = AVX::load(b + i*w);
+			reg r3 = AVX::sub(r1, r2);
+			AVX::store(r3, a + i*w);
+		}
+		for (size_t i = w * chunks; i < n; i++)
+			a[i] -= b[i];
+	}
+
+	void scl(K x)
+	{
+		const size_t n = size();
+		const size_t w = AVX::width;
+		const size_t chunks = n / w;
+
+		K* a = data.data();
+
+		reg scalar = AVX::set1(x);
+		for (size_t i = 0; i < chunks; i++)
+		{
+			reg r1 = AVX::load(a + i*w);
+			reg r2 = AVX::mul(r1, scalar);
+			AVX::store(r2, a + i*w);
+		}
+		for (size_t i = w * chunks; i < n; i++)
+			a[i] *= x;
+	}
+
+	K dot(const Vector &vec)
+	{
+		const size_t n = size();
+
+		if (n != vec.size()) throw std::invalid_argument("Dot product requires equal sizes");
+
+		const size_t w = AVX::width;
+		const size_t chunks = n / w;
+
+		K* a = data.data();
+		const K* b = vec.data.data();
+
+		reg acc = AVX::zero();
+		for (size_t i = 0; i < chunks; i++)
+		{
+			reg r1 = AVX::load(a + i*w);
+			reg r2 = AVX::load(b + i*w);
+			acc = AVX::fmadd(r1, r2, acc);
 		}
 
-		K &operator[](size_t i) { return data[i]; }
-		const K &operator[](size_t i) const { return data[i]; }
+		K res = AVX::hsum(acc);
 
-		void print(std::ostream& os = std::cout) const { os << *this << '\n'; }
+		for (size_t i = w * chunks; i < n; i++)
+			res += a[i] * b[i];
 
-		void resize(size_t new_size) { data.resize(new_size); }
+		return res;
+	}
 
-		void add(const Vector &vec)
+	K norm_1()
+	{
+		const size_t n = size();
+		const size_t w = AVX::width;
+		const size_t chunks = n / w;
+
+		K* a = data.data();
+
+		reg acc = AVX::zero();
+		reg sign = AVX::set1(-0.0f);
+		for (size_t i = 0; i < chunks; i++)
 		{
-			const size_t n = size();
-
-			if (n != vec.size()) throw std::invalid_argument("Vector addition requires equal sizes");
-			
-			const size_t w = AVX::width;
-			const size_t chunks = n / w;
-
-			K* a = data.data();
-			const K* b = vec.getData().data();
-
-			for (size_t i = 0; i < chunks; i++)
-			{
-				reg r1 = AVX::load(a + i*w);
-				reg r2 = AVX::load(b + i*w);
-				reg r3 = AVX::add(r1, r2);
-				AVX::store(r3, a + i*w);
-			}
-			for (size_t i = w * chunks; i < n; i++)
-				a[i] += b[i];
-		}	
-
-		void sub(const Vector &vec)
-		{
-			const size_t n = size();
-
-			if (n != vec.size()) throw std::invalid_argument("Vector substraction requires equal sizes");
-			
-			const size_t w = AVX::width;
-			const size_t chunks = n / w;
-
-			K* a = data.data();
-			const K* b = vec.getData().data();
-
-			for (size_t i = 0; i < chunks; i++)
-			{
-				reg r1 = AVX::load(a + i*w);
-				reg r2 = AVX::load(b + i*w);
-				reg r3 = AVX::sub(r1, r2);
-				AVX::store(r3, a + i*w);
-			}
-			for (size_t i = w * chunks; i < n; i++)
-				a[i] -= b[i];
+			reg r1 = AVX::load(a + i*w);
+			reg r2 = AVX::and_(r1, sign);
+			acc = AVX::add(r2, acc);
 		}
 
-		void scl(K x)
+		K res = AVX::hsum(acc);
+
+		for (size_t i = w * chunks; i < n; i++)
+			res += AVX::abs_(a[i]);
+
+		return res;
+	}
+
+	K norm()
+	{
+		const size_t n = size();
+		const size_t w = AVX::width;
+		const size_t chunks = n / w;
+
+		K* a = data.data();
+
+		reg acc = AVX::zero();
+		for (size_t i = 0; i < chunks; i++)
 		{
-			const size_t n = size();
-			const size_t w = AVX::width;
-			const size_t chunks = n / w;
-
-			K* a = data.data();
-
-			reg scalar = AVX::set1(x);
-			for (size_t i = 0; i < chunks; i++)
-			{
-				reg r1 = AVX::load(a + i*w);
-				reg r2 = AVX::mul(r1, scalar);
-				AVX::store(r2, a + i*w);
-			}
-			for (size_t i = w * chunks; i < n; i++)
-				a[i] *= x;
+			reg r1 = AVX::load(a + i*w);
+			reg r2 = AVX::mul(r1, r1);
+			acc = AVX::add(r2, acc);
 		}
 
-		K dot(const Vector &vec)
+		K res = AVX::hsum(acc);
+
+		K tmp;
+		for (size_t i = w * chunks; i < n; i++)
 		{
-			const size_t n = size();
-			
-			if (n != vec.size()) throw std::invalid_argument("Dot product requires equal sizes");
-
-			const size_t w = AVX::width;
-			const size_t chunks = n / w;
-
-			K* a = data.data();
-			const K* b = vec.data.data();
-
-			reg acc = AVX::zero();
-			for (size_t i = 0; i < chunks; i++)
-			{
-				reg r1 = AVX::load(a + i*w);
-				reg r2 = AVX::load(b + i*w);
-				acc = AVX::fmadd(r1, r2, acc);
-			}
-
-			K res = AVX::hsum(acc);
-
-			for (size_t i = w * chunks; i < n; i++)
-				res += a[i] * b[i];
-
-			return res;
+			tmp = a[i];
+			res += tmp * tmp;
 		}
 
-		K norm_1()
+		return AVX::sqrt(res);
+	}
+
+	K norm_inf()
+	{
+		const size_t n = size();
+		const size_t w = AVX::width;
+		const size_t chunks = n / w;
+
+		K* a = data.data();
+
+		reg r_max = AVX::zero();
+		reg sign = AVX::set1(-0.0f);
+		for (size_t i = 0; i < chunks; i++)
 		{
-			const size_t n = size();
-			const size_t w = AVX::width;
-			const size_t chunks = n / w;
-
-			K* a = data.data();
-
-			reg acc = AVX::zero();
-			reg sign = AVX::set1(-0.0f);
-			for (size_t i = 0; i < chunks; i++)
-			{
-				reg r1 = AVX::load(a + i*w);
-				reg r2 = AVX::and_(r1, sign);
-				acc = AVX::add(r2, acc);
-			}
-
-			K res = AVX::hsum(acc);
-
-			for (size_t i = w * chunks; i < n; i++)
-				res += abs(a[i]);
-
-			return res;
+			reg r1 = AVX::load(a + i*w);
+			reg r2 = AVX::and_(r1, sign);
+			r_max = AVX::max(r2, r_max);
 		}
 
-		K norm()
-		{
-			const size_t n = size();
-			const size_t w = AVX::width;
-			const size_t chunks = n / w;
+		K res = AVX::ext_max(r_max);
 
-			K* a = data.data();
+		for (size_t i = w * chunks; i < n; i++)
+			res = AVX::max(res, a[i]);
 
-			reg acc = AVX::zero();
-			for (size_t i = 0; i < chunks; i++)
-			{
-				reg r1 = AVX::load(a + i*w);
-				reg r2 = AVX::mul(r1, r1);
-				acc = AVX::add(r2, acc);
-			}
+		return res;
+	}
 
-			K res = AVX::hsum(acc);
+	Vector &operator+(const Vector& vec) {return add(vec); }
+	Vector &operator-(const Vector& vec) {return sub(vec); }
+	Vector &operator*(K scalar) { return scl(scalar); }
 
-			K tmp;
-			for (size_t i = w * chunks; i < n; i++)
-			{
-				tmp = a[i];
-				res += tmp * tmp;
-			}
+	friend Vector<K> linear_combination<>(const std::vector<Vector<K>> &vectors, const std::vector<K> &scalars);
+	friend Vector<K> lerp<>(const Vector<K> &a, const Vector<K> &b, K t);
+	friend Vector<K> angle_cos<>(const Vector<K> &a, const Vector<K> &b);
+	friend Vector<K> cross_product<>(const Vector<K> &a, const Vector<K> &b);
 
-			return std::pow(res, 0.5f);
-		}
-
-		K norm_inf()
-		{
-			const size_t n = size();
-			const size_t w = AVX::width;
-			const size_t chunks = n / w;
-
-			K* a = data.data();
-
-			reg r_max = AVX::zero();
-			reg sign = AVX::set1(-0.0f);
-			for (size_t i = 0; i < chunks; i++)
-			{
-				reg r1 = AVX::load(a + i*w);
-				reg r2 = AVX::and_(r1, sign);
-				r_max = AVX::max(r2, r_max);
-			}
-
-			K res = AVX::ext_max(r_max);
-
-			for (size_t i = w * chunks; i < n; i++)
-				res = std::max(res, a[i]);
-
-			return res;
-		}
-
-		Vector &operator+(const Vector& vec) {return add(vec); }
-		Vector &operator-(const Vector& vec) {return sub(vec); }
-		Vector &operator*(K scalar) { return scl(scalar); }
-
-		friend Vector<K> linear_combination<>(const std::vector<Vector<K>> &vectors, const std::vector<K> &scalars);
-		friend Vector<K> lerp<>(const Vector<K> &a, const Vector<K> &b, K t);
-		friend Vector<K> angle_cos<>(const Vector<K> &a, const Vector<K> &b);
-		friend Vector<K> cross_product<>(const Vector<K> &a, const Vector<K> &b);
-
-	private:
-		aligned_vector<K> data;
-		using AVX = AVX_struct<K>;
-		using reg = typename AVX::reg;
+private:
+	aligned_vector<K> data;
+	using AVX = AVX_struct<K>;
+	using reg = typename AVX::reg;
 };

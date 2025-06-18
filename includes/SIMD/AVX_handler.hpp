@@ -6,12 +6,15 @@
 /*   By: wirare <wirare@42angouleme.fr>             +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/06/15 20:20:33 by wirare            #+#    #+#             */
-/*   Updated: 2025/06/17 16:12:51 by wirare           ###   ########.fr       */
+/*   Updated: 2025/06/18 20:08:58 by ellanglo         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 #pragma once
 
+#include "../Math/Complex.hpp"
 #include <immintrin.h>
+#include <algorithm>
+#include <math.h>
 
 template<typename T>
 struct AVX_struct;
@@ -51,6 +54,15 @@ struct AVX_struct<float>
 		max128 = _mm_max_ss(max128, temp);
 		return _mm_cvtss_f32(max128);
 	}
+	static inline reg i32gather(float *base_addr, const int *indices)
+	{
+		__m256i indices_reg = _mm256_load_si256(reinterpret_cast<const __m256i*>(indices));
+		return _mm256_i32gather_ps(base_addr, indices_reg, width);
+	}
+
+	static inline bool max(float a, float b) { return std::max(a, b); }
+	static inline float sqrt(float a) { return std::pow(a, 0.5f); }
+	static inline float abs_(float a) { return abs(a); }
 
 	static const constexpr std::size_t width = 8;
 };
@@ -89,6 +101,33 @@ struct AVX_struct<double>
 		__m128d max1 = _mm_max_sd(max2, shuf);
 		return _mm_cvtsd_f64(max1);
 	}
+	static inline reg i32gather(double *base_addr, const int *indices)
+	{
+		__m128i indices_reg = _mm_load_si128(reinterpret_cast<const __m128i*>(indices));
+		return _mm256_i32gather_pd(base_addr, indices_reg, width);
+	}
+
+	static inline bool max(double a, double b) { return std::max(a, b); }
+	static inline double sqrt(double a) { return std::pow(a, 0.5f); }
+	static inline double abs_(double a) { return abs(a); }
 
 	static const constexpr std::size_t width = 4;
+};
+
+template<typename T>
+struct AVX_struct<Complex<T>>
+{
+	using reg = Complex<T>;
+
+	static inline reg load(const Complex<T> *src) { return src; }
+	static inline void store(reg src, Complex<T> *dest) { src = dest; }
+	static inline reg set1(Complex<T> z) { return z; }
+	static inline reg add(reg a, reg b) { return a+b; }
+	static inline reg sub(reg a, reg b) { return a-b; }
+	static inline reg mul(reg a, reg b) { return a*b; }
+	static inline reg zero() { return Complex<T>(0); }
+	static inline reg fmadd(reg a, reg b, reg c) { return a*b+c; }
+	static inline Complex hsum();
+
+	static const constexpr std::size_t width = 1;
 };

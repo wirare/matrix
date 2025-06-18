@@ -6,7 +6,7 @@
 /*   By: wirare <wirare@42angouleme.fr>             +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/06/15 17:31:33 by wirare            #+#    #+#             */
-/*   Updated: 2025/06/17 16:13:52 by wirare           ###   ########.fr       */
+/*   Updated: 2025/06/18 02:01:34 by wirare           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 #pragma once
@@ -20,7 +20,7 @@
 #include <vector>
 #include <math.h>
 
-template <typename T>
+template <typename K>
 class Vector;
 
 template<typename K>
@@ -101,17 +101,54 @@ static Vector<K> lerp(const Vector<K> &vec_a, const Vector<K> &vec_b, K t)
 	return res;
 }
 
-template <typename T>
+template <typename K>
+static K angle_cos(const Vector<K> &a, const Vector<K> &b)
+{
+	if (a.size() != b.size()) throw std::invalid_argument("Vector cosine require equal vector size");
+
+	K dot = a.dot(b);
+	K norm_product = a.norm() * b.norm();
+	K res = dot / norm_product;
+	
+	return res;
+}
+
+template <typename K>
+static Vector<K> cross_product(const Vector<K> &a, const Vector<K> &b)
+{
+	if (a.size() != 3 || b.size() != 3)
+		throw std::invalid_argument("Cross product require 2 3-dimentional vector");
+
+	#define X 1
+	#define Y 2
+	#define Z 3
+	Vector<K> res = 
+	{
+		a[Y] * b[Z] - a[Z] * b[Y],
+		a[Z] * b[X] - a[X] * b[Z],
+		a[X] * b[Y] - a[Y] * b[X]
+	};
+	#undef X
+	#undef Y
+	#undef Z
+
+	return res;
+}
+
+template <typename K>
+class Matrix;
+
+template <typename K>
 class Vector
 {
 	public:
-		Vector(const std::vector<T> &vec): data(vec.begin(), vec.end()) {}
+		Vector(const std::vector<K> &vec): data(vec.begin(), vec.end()) {}
 		Vector(size_t size): data(size) {}
-		Vector(size_t size, const T &value): data(size, value) {}
-		Vector(std::initializer_list<T> init): data(init) {}
+		Vector(size_t size, const K &value): data(size, value) {}
+		Vector(const std::initializer_list<K> &init): data(init) {}
 
 		size_t size() const noexcept { return data.size(); }
-		const aligned_vector<T> &getData() const noexcept { return data; }
+		const aligned_vector<K> &getData() const noexcept { return data; }
 
 		friend std::ostream& operator<<(std::ostream& os, Vector const& v) {
 			os << "Vector(size=" << v.size() << ") [";
@@ -125,8 +162,8 @@ class Vector
 			return os;
 		}
 
-		T &operator[](size_t i) { return data[i]; }
-		const T &operator[](size_t i) const { return data[i]; }
+		K &operator[](size_t i) { return data[i]; }
+		const K &operator[](size_t i) const { return data[i]; }
 
 		void print(std::ostream& os = std::cout) const { os << *this << '\n'; }
 
@@ -141,8 +178,8 @@ class Vector
 			const size_t w = AVX::width;
 			const size_t chunks = n / w;
 
-			T* a = data.data();
-			const T* b = vec.getData().data();
+			K* a = data.data();
+			const K* b = vec.getData().data();
 
 			for (size_t i = 0; i < chunks; i++)
 			{
@@ -164,8 +201,8 @@ class Vector
 			const size_t w = AVX::width;
 			const size_t chunks = n / w;
 
-			T* a = data.data();
-			const T* b = vec.getData().data();
+			K* a = data.data();
+			const K* b = vec.getData().data();
 
 			for (size_t i = 0; i < chunks; i++)
 			{
@@ -178,13 +215,13 @@ class Vector
 				a[i] -= b[i];
 		}
 
-		void scl(T x)
+		void scl(K x)
 		{
 			const size_t n = size();
 			const size_t w = AVX::width;
 			const size_t chunks = n / w;
 
-			T* a = data.data();
+			K* a = data.data();
 
 			reg scalar = AVX::set1(x);
 			for (size_t i = 0; i < chunks; i++)
@@ -197,7 +234,7 @@ class Vector
 				a[i] *= x;
 		}
 
-		T dot(const Vector &vec)
+		K dot(const Vector &vec)
 		{
 			const size_t n = size();
 			
@@ -206,8 +243,8 @@ class Vector
 			const size_t w = AVX::width;
 			const size_t chunks = n / w;
 
-			T* a = data.data();
-			const T* b = vec.data.data();
+			K* a = data.data();
+			const K* b = vec.data.data();
 
 			reg acc = AVX::zero();
 			for (size_t i = 0; i < chunks; i++)
@@ -217,7 +254,7 @@ class Vector
 				acc = AVX::fmadd(r1, r2, acc);
 			}
 
-			T res = AVX::hsum(acc);
+			K res = AVX::hsum(acc);
 
 			for (size_t i = w * chunks; i < n; i++)
 				res += a[i] * b[i];
@@ -225,13 +262,13 @@ class Vector
 			return res;
 		}
 
-		T norm_1()
+		K norm_1()
 		{
 			const size_t n = size();
 			const size_t w = AVX::width;
 			const size_t chunks = n / w;
 
-			T* a = data.data();
+			K* a = data.data();
 
 			reg acc = AVX::zero();
 			reg sign = AVX::set1(-0.0f);
@@ -242,7 +279,7 @@ class Vector
 				acc = AVX::add(r2, acc);
 			}
 
-			T res = AVX::hsum(acc);
+			K res = AVX::hsum(acc);
 
 			for (size_t i = w * chunks; i < n; i++)
 				res += abs(a[i]);
@@ -250,13 +287,13 @@ class Vector
 			return res;
 		}
 
-		T norm()
+		K norm()
 		{
 			const size_t n = size();
 			const size_t w = AVX::width;
 			const size_t chunks = n / w;
 
-			T* a = data.data();
+			K* a = data.data();
 
 			reg acc = AVX::zero();
 			for (size_t i = 0; i < chunks; i++)
@@ -266,9 +303,9 @@ class Vector
 				acc = AVX::add(r2, acc);
 			}
 
-			T res = AVX::hsum(acc);
+			K res = AVX::hsum(acc);
 
-			T tmp;
+			K tmp;
 			for (size_t i = w * chunks; i < n; i++)
 			{
 				tmp = a[i];
@@ -278,13 +315,13 @@ class Vector
 			return std::pow(res, 0.5f);
 		}
 
-		T norm_inf()
+		K norm_inf()
 		{
 			const size_t n = size();
 			const size_t w = AVX::width;
 			const size_t chunks = n / w;
 
-			T* a = data.data();
+			K* a = data.data();
 
 			reg r_max = AVX::zero();
 			reg sign = AVX::set1(-0.0f);
@@ -295,7 +332,7 @@ class Vector
 				r_max = AVX::max(r2, r_max);
 			}
 
-			T res = AVX::ext_max(r_max);
+			K res = AVX::ext_max(r_max);
 
 			for (size_t i = w * chunks; i < n; i++)
 				res = std::max(res, a[i]);
@@ -305,13 +342,15 @@ class Vector
 
 		Vector &operator+(const Vector& vec) {return add(vec); }
 		Vector &operator-(const Vector& vec) {return sub(vec); }
-		Vector &operator*(T scalar) { return scl(scalar); }
+		Vector &operator*(K scalar) { return scl(scalar); }
 
-		friend Vector<T> linear_combination<>(const std::vector<Vector<T>> &vectors, const std::vector<T> &scalars);
-		friend Vector<T> lerp<>(const Vector<T> &a, const Vector<T> &b, T t);
+		friend Vector<K> linear_combination<>(const std::vector<Vector<K>> &vectors, const std::vector<K> &scalars);
+		friend Vector<K> lerp<>(const Vector<K> &a, const Vector<K> &b, K t);
+		friend Vector<K> angle_cos<>(const Vector<K> &a, const Vector<K> &b);
+		friend Vector<K> cross_product<>(const Vector<K> &a, const Vector<K> &b);
 
 	private:
-		aligned_vector<T>	data;
-		using AVX = AVX_struct<T>;
+		aligned_vector<K> data;
+		using AVX = AVX_struct<K>;
 		using reg = typename AVX::reg;
 };

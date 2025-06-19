@@ -6,7 +6,7 @@
 /*   By: wirare <wirare@42angouleme.fr>             +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/06/15 20:20:33 by wirare            #+#    #+#             */
-/*   Updated: 2025/06/18 20:08:58 by ellanglo         ###   ########.fr       */
+/*   Updated: 2025/06/19 15:08:01 by ellanglo         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 #pragma once
@@ -59,6 +59,11 @@ struct AVX_struct<float>
 		__m256i indices_reg = _mm256_load_si256(reinterpret_cast<const __m256i*>(indices));
 		return _mm256_i32gather_ps(base_addr, indices_reg, width);
 	}
+	static inline reg abs_(reg a)
+	{
+		reg sign = _mm256_set1_ps(-0.0f);
+		return _mm256_and_ps(a, sign);
+	}
 
 	static inline bool max(float a, float b) { return std::max(a, b); }
 	static inline float sqrt(float a) { return std::pow(a, 0.5f); }
@@ -106,6 +111,11 @@ struct AVX_struct<double>
 		__m128i indices_reg = _mm_load_si128(reinterpret_cast<const __m128i*>(indices));
 		return _mm256_i32gather_pd(base_addr, indices_reg, width);
 	}
+	static inline reg abs_(reg a)
+	{
+		reg sign = _mm256_set1_pd(-0.0f);
+		return _mm256_and_pd(a, sign);
+	}
 
 	static inline bool max(double a, double b) { return std::max(a, b); }
 	static inline double sqrt(double a) { return std::pow(a, 0.5f); }
@@ -120,14 +130,32 @@ struct AVX_struct<Complex<T>>
 	using reg = Complex<T>;
 
 	static inline reg load(const Complex<T> *src) { return src; }
-	static inline void store(reg src, Complex<T> *dest) { src = dest; }
+	static inline void store(reg src, Complex<T> *dest) { *dest = src; }
 	static inline reg set1(Complex<T> z) { return z; }
 	static inline reg add(reg a, reg b) { return a+b; }
 	static inline reg sub(reg a, reg b) { return a-b; }
 	static inline reg mul(reg a, reg b) { return a*b; }
 	static inline reg zero() { return Complex<T>(0); }
 	static inline reg fmadd(reg a, reg b, reg c) { return a*b+c; }
-	static inline Complex hsum();
+	static inline Complex<T> hsum(reg a) { return a; }
+	static inline Complex<T> ext_max(reg a) { return a; }
+	static inline reg i32gather(Complex<T> *base_addr, __attribute__((unused)) const int *indices) { return base_addr; }
+	static inline bool max(Complex<T> a, Complex<T> b) 
+	{
+		if (a.mag() > b.mag())
+			return a;
+		return b;
+	}
+	static inline Complex<T> sqrt(Complex<T> a)
+	{ 
+		Complex<T> res;
+		T r = a.mag();
+		int sign = a.im < 0 ? -1 : 1;
+		res.re = std::pow((r + a.re)/2, 0.5f);
+		res.im = std::pow((r - a.im)/2, 0.5f) * sign;
+		return res;
+	}
+	static inline Complex<T> abs_(Complex<T> a) { return a.mag(); }
 
 	static const constexpr std::size_t width = 1;
 };

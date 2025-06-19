@@ -6,10 +6,12 @@
 /*   By: ellanglo <ellanglo@42angouleme.fr>         +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/06/18 17:51:25 by ellanglo          #+#    #+#             */
-/*   Updated: 2025/06/18 18:34:56 by ellanglo         ###   ########.fr       */
+/*   Updated: 2025/06/19 14:42:35 by ellanglo         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 #pragma once
+
+#include <math.h>
 
 template <typename K>
 struct Complex
@@ -50,4 +52,5 @@ struct Complex
 		res.im = (im * z.re - re * z.im) / denominator;
 		return res;
 	}
+	inline K mag() { return std::pow((re * re + im * im), 0.5f); }
 };

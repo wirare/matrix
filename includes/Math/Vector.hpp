@@ -6,7 +6,7 @@
 /*   By: wirare <wirare@42angouleme.fr>             +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/06/15 17:31:33 by wirare            #+#    #+#             */
-/*   Updated: 2025/06/18 19:47:04 by ellanglo         ###   ########.fr       */
+/*   Updated: 2025/06/19 14:54:12 by ellanglo         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 #pragma once
@@ -271,11 +271,10 @@ public:
 		K* a = data.data();
 
 		reg acc = AVX::zero();
-		reg sign = AVX::set1(-0.0f);
 		for (size_t i = 0; i < chunks; i++)
 		{
 			reg r1 = AVX::load(a + i*w);
-			reg r2 = AVX::and_(r1, sign);
+			reg r2 = AVX::abs_(r1);
 			acc = AVX::add(r2, acc);
 		}
 

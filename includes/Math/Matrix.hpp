@@ -6,7 +6,7 @@
 /*   By: wirare <wirare@42angouleme.fr>             +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/06/18 01:21:53 by wirare            #+#    #+#             */
-/*   Updated: 2025/06/20 15:44:27 by ellanglo         ###   ########.fr       */
+/*   Updated: 2025/06/20 17:23:22 by ellanglo         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 #pragma once
@@ -221,7 +221,7 @@ public:
 			aligned_vector<K> indices(w);
 			for (size_t k = 0; k < w; k++)
 				indices[k] = static_cast<int>((i * w + k) * n + (i * w + k));
-			reg gather = i32gather(a, indices.data());
+			reg gather = AVX::i32gather(a, indices.data());
 			acc = AVX::add(gather, acc);
 		}
 

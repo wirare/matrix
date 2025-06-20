@@ -6,7 +6,7 @@
 /*   By: wirare <wirare@42angouleme.fr>             +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/06/15 17:31:33 by wirare            #+#    #+#             */
-/*   Updated: 2025/06/20 11:29:44 by wirare           ###   ########.fr       */
+/*   Updated: 2025/06/20 13:45:20 by ellanglo         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 #pragma once
@@ -335,8 +335,8 @@ public:
 		K res = AVX::ext_max(r_max);
 
 		for (size_t i = w * chunks; i < n; i++)
-			res = Math::max(res, a[i]);
-
+			res = Math::max(res, Math::abs_(a[i]));
+		
 		return res;
 	}
 
@@ -346,7 +346,7 @@ public:
 
 	friend Vector<K> linear_combination<>(const std::vector<Vector<K>> &vectors, const std::vector<K> &scalars);
 	friend Vector<K> lerp<>(const Vector<K> &a, const Vector<K> &b, K t);
-	friend Vector<K> angle_cos<>(const Vector<K> &a, const Vector<K> &b);
+	friend K angle_cos<>(const Vector<K> &a, const Vector<K> &b);
 	friend Vector<K> cross_product<>(const Vector<K> &a, const Vector<K> &b);
 
 private:

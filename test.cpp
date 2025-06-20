@@ -206,6 +206,7 @@ void test_norms() {
     // Assertions
     assert(std::abs(norm_1   - expected_norm_1)   < eps);
     assert(std::abs(norm_2   - expected_norm_2)   < eps);
+	std::cout << "Expected norm inf : " << expected_norm_inf << "\nNorm inf calculated : " << norm_inf << std::endl;
     assert(std::abs(norm_inf - expected_norm_inf) < eps);
 
     std::cout << "Norm tests passed for " << (std::is_same<T, float>::value ? "float" : "double") << "\n";

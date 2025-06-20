@@ -6,7 +6,7 @@
 /*   By: wirare <wirare@42angouleme.fr>             +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/06/15 20:20:33 by wirare            #+#    #+#             */
-/*   Updated: 2025/06/20 11:26:52 by wirare           ###   ########.fr       */
+/*   Updated: 2025/06/20 13:44:51 by ellanglo         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 #pragma once
@@ -32,7 +32,7 @@ struct AVX_struct<float>
 	static inline reg mul(reg a, reg b) { return _mm256_mul_ps(a, b); }
 	static inline reg zero() { return _mm256_setzero_ps(); }
 	static inline reg fmadd(reg a, reg b, reg c) { return _mm256_fmadd_ps(a, b ,c); }
-	static inline float hsum(__m256 a) 
+	static inline float hsum(reg a) 
 	{
 		__m128 low  = _mm256_castps256_ps128(a);
 		__m128 high = _mm256_extractf128_ps(a, 1);
@@ -81,7 +81,7 @@ struct AVX_struct<double>
 	static inline reg mul(reg a, reg b) { return _mm256_mul_pd(a, b); }
 	static inline reg zero() { return _mm256_setzero_pd(); }
 	static inline reg fmadd(reg a, reg b, reg c) { return _mm256_fmadd_pd(a, b ,c); }
-	static inline double hsum(__m256d a) 
+	static inline double hsum(reg a) 
 	{
 		__m128d low  = _mm256_castpd256_pd128(a);
 		__m128d high = _mm256_extractf128_pd(a, 1);
@@ -109,7 +109,7 @@ struct AVX_struct<double>
 	}
 	static inline reg abs_(reg a)
 	{
-		reg sign = _mm256_set1_pd(-0.0f);
+		static const reg sign = _mm256_set1_pd(-0.0f);
 		return _mm256_and_pd(a, sign);
 	}
 
@@ -123,7 +123,7 @@ struct AVX_struct<Complex<T>>
 
 	static inline reg load(const Complex<T> *src) { return src; }
 	static inline void store(reg src, Complex<T> *dest) { *dest = src; }
-	static inline reg set1(Complex<T> z) { return z; }
+	static inline reg set1(const Complex<T> &z) { return z; }
 	static inline reg add(reg a, reg b) { return a+b; }
 	static inline reg sub(reg a, reg b) { return a-b; }
 	static inline reg mul(reg a, reg b) { return a*b; }
@@ -132,13 +132,13 @@ struct AVX_struct<Complex<T>>
 	static inline Complex<T> hsum(reg a) { return a; }
 	static inline Complex<T> ext_max(reg a) { return a; }
 	static inline reg i32gather(Complex<T> *base_addr, __attribute__((unused)) const int *indices) { return base_addr; }
-	static inline bool max(Complex<T> a, Complex<T> b) 
+	static inline bool max(const Complex<T> &a, const Complex<T> &b) 
 	{
 		if (a.mag() > b.mag())
 			return a;
 		return b;
 	}
-	static inline Complex<T> abs_(Complex<T> a) { return a.mag(); }
+	static inline Complex<T> abs_(const Complex<T> &a) { return a.mag(); }
 
 	static const constexpr std::size_t width = 1;
 };

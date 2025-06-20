@@ -6,7 +6,7 @@
 /*   By: wirare <wirare@42angouleme.fr>             +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/06/18 01:21:53 by wirare            #+#    #+#             */
-/*   Updated: 2025/06/18 17:51:02 by ellanglo         ###   ########.fr       */
+/*   Updated: 2025/06/20 15:44:27 by ellanglo         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 #pragma once
@@ -90,8 +90,8 @@ public:
 			aligned_vector<K> indices(w);
 			for (size_t k = 0; k < w; ++k)
 				indices[k] = static_cast<int>((j * w + k) * cols + i);
-			reg gathered = AVX::i32gather(data.data(), indices.data());
-			AVX::store(gathered, dest + j * w);
+			reg gather = AVX::i32gather(data.data(), indices.data());
+			AVX::store(gather, dest + j * w);
 		}
 
 		for (size_t j = w * chunks; j < rows; ++j)
@@ -201,6 +201,33 @@ public:
 				res(i, j) = row.dot(col);
 			}
 		}
+
+		return res;
+	}
+
+	K trace()
+	{
+		if (cols != rows) throw std::invalid_argument("Matrix Trace computation require a square matrix");
+	
+		const size_t n = rows;
+		const size_t w = AVX::width;
+		const size_t chunks =  n / w;
+
+		K *a = data.data();
+
+		reg acc = AVX::zero();
+		for (size_t i = 0; i < chunks; i++)
+		{
+			aligned_vector<K> indices(w);
+			for (size_t k = 0; k < w; k++)
+				indices[k] = static_cast<int>((i * w + k) * n + (i * w + k));
+			reg gather = i32gather(a, indices.data());
+			acc = AVX::add(gather, acc);
+		}
+
+		K res = AVX::hsum(acc);
+		for (size_t i = chunks * w; i < n; i++)
+			res += this(i, i);
 
 		return res;
 	}

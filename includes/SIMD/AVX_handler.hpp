@@ -6,7 +6,7 @@
 /*   By: wirare <wirare@42angouleme.fr>             +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/06/15 20:20:33 by wirare            #+#    #+#             */
-/*   Updated: 2025/06/19 15:08:01 by ellanglo         ###   ########.fr       */
+/*   Updated: 2025/06/20 11:26:52 by wirare           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 #pragma once
@@ -65,10 +65,6 @@ struct AVX_struct<float>
 		return _mm256_and_ps(a, sign);
 	}
 
-	static inline bool max(float a, float b) { return std::max(a, b); }
-	static inline float sqrt(float a) { return std::pow(a, 0.5f); }
-	static inline float abs_(float a) { return abs(a); }
-
 	static const constexpr std::size_t width = 8;
 };
 
@@ -117,10 +113,6 @@ struct AVX_struct<double>
 		return _mm256_and_pd(a, sign);
 	}
 
-	static inline bool max(double a, double b) { return std::max(a, b); }
-	static inline double sqrt(double a) { return std::pow(a, 0.5f); }
-	static inline double abs_(double a) { return abs(a); }
-
 	static const constexpr std::size_t width = 4;
 };
 
@@ -145,15 +137,6 @@ struct AVX_struct<Complex<T>>
 		if (a.mag() > b.mag())
 			return a;
 		return b;
-	}
-	static inline Complex<T> sqrt(Complex<T> a)
-	{ 
-		Complex<T> res;
-		T r = a.mag();
-		int sign = a.im < 0 ? -1 : 1;
-		res.re = std::pow((r + a.re)/2, 0.5f);
-		res.im = std::pow((r - a.im)/2, 0.5f) * sign;
-		return res;
 	}
 	static inline Complex<T> abs_(Complex<T> a) { return a.mag(); }
 

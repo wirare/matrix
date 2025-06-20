@@ -6,13 +6,14 @@
 /*   By: wirare <wirare@42angouleme.fr>             +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/06/15 17:31:33 by wirare            #+#    #+#             */
-/*   Updated: 2025/06/19 14:54:12 by ellanglo         ###   ########.fr       */
+/*   Updated: 2025/06/20 11:29:44 by wirare           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 #pragma once
 
 #include "../SIMD/Allocator.hpp"
 #include "../SIMD/AVX_handler.hpp"
+#include "MathHelp.hpp"
 #include <cstddef>
 #include <cstdlib>
 #include <iostream>
@@ -281,7 +282,7 @@ public:
 		K res = AVX::hsum(acc);
 
 		for (size_t i = w * chunks; i < n; i++)
-			res += AVX::abs_(a[i]);
+			res += Math::abs_(a[i]);
 
 		return res;
 	}
@@ -311,7 +312,7 @@ public:
 			res += tmp * tmp;
 		}
 
-		return AVX::sqrt(res);
+		return Math::sqrt(res);
 	}
 
 	K norm_inf()
@@ -334,7 +335,7 @@ public:
 		K res = AVX::ext_max(r_max);
 
 		for (size_t i = w * chunks; i < n; i++)
-			res = AVX::max(res, a[i]);
+			res = Math::max(res, a[i]);
 
 		return res;
 	}
@@ -352,4 +353,5 @@ private:
 	aligned_vector<K> data;
 	using AVX = AVX_struct<K>;
 	using reg = typename AVX::reg;
+	using Math = MathHelp<K>;
 };

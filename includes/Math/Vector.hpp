@@ -6,7 +6,7 @@
 /*   By: wirare <wirare@42angouleme.fr>             +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/06/15 17:31:33 by wirare            #+#    #+#             */
-/*   Updated: 2025/06/21 15:39:36 by ellanglo         ###   ########.fr       */
+/*   Updated: 2025/06/21 16:27:34 by ellanglo         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 #pragma once
@@ -272,31 +272,16 @@ public:
 		K* a = data.data();
 
 		K res;
-
-		if constexpr (!is_complex<K>::value)
+		
+		using type = std::conditional_t<is_complex<K>::value, typename AVX::hreg, reg>;
+		type acc = AVX::zero();
+		for (size_t i = 0; i < chunks; i++)
 		{
-			reg acc = AVX::zero();
-			for (size_t i = 0; i < chunks; i++)
-			{
-				reg r1 = AVX::load(a + i*w);
-				reg r2 = AVX::abs_(r1);
-				acc = AVX::add(r2, acc);
-			}
-			res = AVX::hsum(acc);
+			reg r1 = AVX::load(a + i*w);
+			type r2 = AVX::abs_(r1);
+			acc = AVX::add(r2, acc);
 		}
-		else
-		{
-			using hreg = typename AVX::hreg;
-			
-			hreg acc = AVX::zero();
-			for (size_t i = 0; i < chunks; i++)
-			{
-				reg r1 = AVX::load(a + i*w);
-				hreg r2 = AVX::abs_(r1);
-				acc = AVX::add(r2, acc);
-			}
-			res = AVX::hsum(acc);
-		}
+		res = AVX::hsum(acc);
 		
 		for (size_t i = w * chunks; i < n; i++)
 			res += Math::abs_(a[i]);

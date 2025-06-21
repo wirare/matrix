@@ -6,7 +6,7 @@
 /*   By: wirare <wirare@42angouleme.fr>             +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/06/15 20:20:33 by wirare            #+#    #+#             */
-/*   Updated: 2025/06/21 14:39:52 by ellanglo         ###   ########.fr       */
+/*   Updated: 2025/06/21 15:39:15 by ellanglo         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 #pragma once
@@ -63,7 +63,6 @@ struct AVX_struct<float>
 		reg sign = _mm256_set1_ps(-0.0f);
 		return _mm256_and_ps(a, sign);
 	}
-	static inline reg and_(reg a, reg sign) { return _mm256_and_ps(a, sign); }
 
 	static const constexpr std::size_t width = 8;
 };
@@ -111,7 +110,6 @@ struct AVX_struct<double>
 		static const reg sign = _mm256_set1_pd(-0.0f);
 		return _mm256_and_pd(a, sign);
 	}
-	static inline reg and_(reg a, reg sign) { return _mm256_and_pd(a, sign); }
 
 	static const constexpr std::size_t width = 4;
 };

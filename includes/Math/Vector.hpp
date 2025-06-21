@@ -6,7 +6,7 @@
 /*   By: wirare <wirare@42angouleme.fr>             +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/06/15 17:31:33 by wirare            #+#    #+#             */
-/*   Updated: 2025/06/20 13:45:20 by ellanglo         ###   ########.fr       */
+/*   Updated: 2025/06/21 14:28:15 by ellanglo         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 #pragma once
@@ -271,16 +271,33 @@ public:
 
 		K* a = data.data();
 
-		reg acc = AVX::zero();
-		for (size_t i = 0; i < chunks; i++)
+		K res;
+
+		if constexpr (!is_complex<K>::value)
 		{
-			reg r1 = AVX::load(a + i*w);
-			reg r2 = AVX::abs_(r1);
-			acc = AVX::add(r2, acc);
+			reg acc = AVX::zero();
+			for (size_t i = 0; i < chunks; i++)
+			{
+				reg r1 = AVX::load(a + i*w);
+				reg r2 = AVX::abs_(r1);
+				acc = AVX::add(r2, acc);
+			}
+			res = AVX::hsum(acc);
 		}
-
-		K res = AVX::hsum(acc);
-
+		else
+		{
+			using hreg = typename AVX::hreg;
+			
+			hreg acc = AVX::zero();
+			for (size_t i = 0; i < chunks; i++)
+			{
+				reg r1 = AVX::load(a + i*w);
+				hreg r2 = AVX::abs_(r1);
+				acc = AVX::add(r2, acc);
+			}
+			res = AVX::hsum(acc);
+		}
+		
 		for (size_t i = w * chunks; i < n; i++)
 			res += Math::abs_(a[i]);
 

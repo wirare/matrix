@@ -5,6 +5,7 @@
 #include <cassert>
 #include <stdexcept>
 #include "includes/Math/Vector.hpp"
+#include "includes/SIMD/AVX_handler_complex.hpp"
 
 template <typename T>
 bool are_equal(const Vector<T>& a, const Vector<T>& b, T epsilon = static_cast<T>(1e-5)) {

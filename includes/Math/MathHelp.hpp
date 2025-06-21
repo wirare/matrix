@@ -6,7 +6,7 @@
 /*   By: wirare <wirare@42angouleme.fr>             +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/06/20 11:21:57 by wirare            #+#    #+#             */
-/*   Updated: 2025/06/20 13:43:48 by ellanglo         ###   ########.fr       */
+/*   Updated: 2025/06/21 12:46:25 by ellanglo         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 #pragma once
@@ -14,6 +14,12 @@
 #include "../Math/Complex.hpp"
 #include <algorithm>
 #include <math.h>
+
+template<typename T>
+struct is_complex : std::false_type {};
+
+template<typename T>
+struct is_complex<Complex<T>> : std::true_type {};
 
 template<typename T>
 struct MathHelp;
@@ -39,7 +45,7 @@ struct MathHelp<Complex<T>>
 {
 	static inline Complex<T> &max(const Complex<T> &a, const Complex<T> &b)
 	{
-		if (a.mag() > b.mag())
+		if (a > b)
 			return a;
 		return b;
 	}	
